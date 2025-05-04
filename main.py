@@ -200,7 +200,7 @@ Tab2:AddButton({
                 v.Handle.Anchored = true
                 wait(0.5)
                 Press()
-                wait(1.3)
+                wait(2)
             end
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = orig
   	end    
@@ -216,7 +216,7 @@ Tab2:AddButton({
                     v.Handle.Anchored = true
                     wait(0.2)
                     Press()
-                    wait(1.3)
+                    wait(2)
                 end
             end
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = orig
