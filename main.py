@@ -6,10 +6,10 @@ local function Press()
     local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- Нажимаем клавишу "E"
-VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, nil)
+VirtualInputManager:SendKeyEvent(true, Enum.KeyCode.F, false, game)
 -- Отпускаем клавишу "E" (можно задержать, если нужно)
 task.wait(0.1)  -- Задержка перед отпусканием (опционально)
-VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, nil)
+VirtualInputManager:SendKeyEvent(false, Enum.KeyCode.F, false, game)
 end
 
 local Tab2 = Window:MakeTab({
@@ -200,7 +200,7 @@ Tab2:AddButton({
                 v.Handle.Anchored = true
                 wait(0.5)
                 Press()
-                wait(2)
+                wait(1.3)
             end
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = orig
   	end    
@@ -216,9 +216,116 @@ Tab2:AddButton({
                     v.Handle.Anchored = true
                     wait(0.2)
                     Press()
-                    wait(2)
+                    wait(1.3)
                 end
             end
     game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = orig
   	end    
+})
+
+local Tab3 = Window:MakeTab({
+	Name = "Выборочный лут",
+	Icon = "rbxassetid://4483345998",
+	PremiumOnly = false
+})
+
+local Players = game:GetService("Players")
+local Player = Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+local ItemsFolder = game.Workspace.Items
+if not ItemsFolder then
+    error("Папка 'Items' не найдена!")
+end
+
+-- Таблица перевода (англ -> русский)
+local itemTranslations = {
+    ["Cube of Ice"] = "Ледяной куб",
+    ["Apple"] = "Яблоко",
+    ["Healing Potion"] = "Зелье лечения",
+    ["Bull's essence"] = "Эссенция быка",
+    ["Bandage"] = "Бинт",
+    ["Frog Potion"] = "Зелье лягушки",
+    ["Sphere of fury"] = "Сфера ярости",
+    ["Potion of Strength"] = "Зелье силы",
+    ["First Aid Kit"] = "Аптечка",
+    ["Bomb"] = "Бомба",
+    ["True Power"] = "Истинная сила",
+    ["Speed Potion"] = "Зелье скорости",
+    ["Lightning Potion"] = "Зелье молнии",
+    ["Boba"] = "Боба"
+}
+
+-- Обратная таблица (русский -> англ)
+local reverseTranslations = {}
+for eng, rus in pairs(itemTranslations) do
+    reverseTranslations[rus] = eng
+end
+
+-- Подготовка списка для dropdown
+local russianOptions = {}
+for _, rusName in pairs(itemTranslations) do
+    table.insert(russianOptions, rusName)
+end
+
+-- Создаём 3 dropdown
+local selectedItems = {}
+local dropdowns = {}
+
+for i = 1, 3 do
+    dropdowns[i] = Tab3:AddDropdown({
+        Name = "Предмет " .. i,
+        Default = russianOptions[1],
+        Options = russianOptions,
+        Callback = function(Value)
+            selectedItems[i] = reverseTranslations[Value]
+        end
+    })
+end
+
+-- Тоггл для сбора
+local isCollecting = false
+local originalCFrame = nil
+
+Tab3:AddToggle({
+    Name = "Собирать выбранные предметы",
+    Default = false,
+    Callback = function(Value)
+        isCollecting = Value
+        if Value then
+            originalCFrame = HumanoidRootPart.CFrame
+            task.spawn(function()
+                while isCollecting do
+                    local foundAny = false
+                    for _, item in ipairs(ItemsFolder:GetChildren()) do
+                        if not isCollecting then break end
+                        
+                        for _, selectedName in pairs(selectedItems) do
+                            if selectedName and item.Name == selectedName then
+                                foundAny = true
+                                HumanoidRootPart.CFrame = item.Handle.CFrame
+                                item.Handle.Anchored = true
+                                task.wait(0.5)
+                                Press()
+                                task.wait(1.3)
+                                break
+                            end
+                        end
+                    end
+                    
+                    if not foundAny then
+                        isCollecting = false
+                        break
+                    end
+                end
+                
+                if originalCFrame then
+                    HumanoidRootPart.CFrame = originalCFrame
+                end
+            end)
+        elseif originalCFrame then
+            HumanoidRootPart.CFrame = originalCFrame
+        end
+    end
 })
