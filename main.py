@@ -207,20 +207,49 @@ Tab2:AddButton({
 })
 
 Tab2:AddButton({
-	Name = "Слутать только бомбы",
+	Name = "Использовать все предметы",
 	Callback = function()
-      		local orig = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
-      		for i, v in ipairs(game.Workspace.Items:GetChildren()) do
-                if v.Name == "Bomb" then
-                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
-                    v.Handle.Anchored = true
-                    wait(0.2)
-                    Press()
-                    wait(1.3)
+for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
+            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
+            v:Activate()
+        end
+	end    
+})
+
+Tab2:AddSlider({
+	Name = "Дальность слап ауры",
+	Min = 10,
+	Max = 50,
+	Default = 25,
+	Color = Color3.fromRGB(140, 185, 255),
+	Increment = 1,
+	ValueName = "Reach",
+	Callback = function(Value)
+		ReachAura = Value
+	end    
+})
+
+Tab2:AddToggle({
+	Name = "Слап Аура",
+	Default = false,
+	Callback = function(Value)
+		SlapAura = Value
+                while SlapAura do
+pcall(function()
+for i,v in pairs(game.Players:GetChildren()) do
+                    if v ~= game.Players.LocalPlayer and v.Character then
+if v.Character:FindFirstChild("Dead") == nil and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:WaitForChild("inMatch").Value == true and game.Players.LocalPlayer.Character:WaitForChild("inMatch").Value == true then
+Magnitude = (game.Players.LocalPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                        if ReachAura >= Magnitude then
+game.ReplicatedStorage.Events.Slap:FireServer(v.Character:WaitForChild("HumanoidRootPart"))
+                    end
+end
+end
                 end
-            end
-    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = orig
-  	end    
+end)
+task.wait()
+end
+	end    
 })
 
 local Tab3 = Window:MakeTab({
@@ -251,7 +280,7 @@ local itemTranslations = {
     ["Potion of Strength"] = "Зелье силы",
     ["First Aid Kit"] = "Аптечка",
     ["Bomb"] = "Бомба",
-    ["True Power"] = "Рука бога",
+    ["True Power"] = "Истинная сила",
     ["Speed Potion"] = "Зелье скорости",
     ["Lightning Potion"] = "Зелье молнии",
     ["Boba"] = "Боба"
@@ -273,7 +302,7 @@ end
 local selectedItems = {}
 local dropdowns = {}
 
-for i = 1, 3 do
+for i = 1, 5 do
     dropdowns[i] = Tab3:AddDropdown({
         Name = "Предмет " .. i,
         Default = russianOptions[1],
@@ -329,3 +358,83 @@ Tab3:AddToggle({
         end
     end
 })
+
+-- Создаем выпадающий список
+local realtimeDropdown = Tab3:AddDropdown({
+    Name = "📌 Быстрый сбор (реал-тайм)",
+    Default = "Сканирую предметы...",
+    Options = {"Сканирую предметы..."},
+    Callback = function(selectedRussianName)
+        local selectedItemName = reverseTranslations[selectedRussianName]
+        if not selectedItemName then return end
+
+        -- Ищем предмет в Workspace (только с Handle)
+        local targetItem
+        for _, item in pairs(game.Workspace.Items:GetChildren()) do
+            if item.Name == selectedItemName and item:FindFirstChild("Handle") then
+                targetItem = item
+                break
+            end
+        end
+
+        if not targetItem then
+            OrionLib:MakeNotification({
+                Name = "Ошибка",
+                Content = "Предмет уже исчез!",
+                Image = "rbxassetid://7733658504",
+                Time = 3
+            })
+            return
+        end
+
+        -- Телепортация + сбор
+        local originalCFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetItem.Handle.CFrame
+        targetItem.Handle.Anchored = true
+        task.wait(0.25)
+        Press() -- Ваша функция нажатия F
+        task.wait(0.5)
+        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = originalCFrame
+
+        OrionLib:MakeNotification({
+            Name = "Успех!",
+            Content = "Подобран: "..selectedRussianName,
+            Image = "rbxassetid://7733919105",
+            Time = 3
+        })
+    end
+})
+
+-- Функция обновления (теперь с полной пересборкой списка)
+local function updateRealtimeItems()
+    local currentItems = {}
+    local addedItems = {} -- Для отслеживания дубликатов
+
+    -- Сканируем только актуальные предметы
+    for _, item in pairs(game.Workspace.Items:GetChildren()) do
+        if item:FindFirstChild("Handle") then
+            local russianName = itemTranslations[item.Name] or item.Name
+            if not addedItems[russianName] then -- Исключаем повторы
+                table.insert(currentItems, russianName)
+                addedItems[russianName] = true
+            end
+        end
+    end
+
+    -- Полностью перезагружаем список
+    if #currentItems > 0 then
+        realtimeDropdown:Refresh(currentItems, true) -- true = удалить старые варианты
+    else
+        realtimeDropdown:Refresh({"Нет предметов"}, true)
+    end
+end
+
+-- Автообновление с интервалом 2 сек (можно изменить)
+task.spawn(function()
+    while task.wait(1) do -- Более частая проверка
+        pcall(updateRealtimeItems) -- Защита от ошибок
+    end
+end)
+
+-- Первый запуск
+updateRealtimeItems()
