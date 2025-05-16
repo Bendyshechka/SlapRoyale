@@ -209,10 +209,31 @@ Tab2:AddButton({
 Tab2:AddButton({
 	Name = "Использовать все предметы",
 	Callback = function()
-for i,v in pairs(game.Players.LocalPlayer.Backpack:GetChildren()) do
-            game.Players.LocalPlayer.Character.Humanoid:EquipTool(v)
-            v:Activate()
-        end
+		-- Сначала ищем True Power и используем его, если есть
+		local backpack = game.Players.LocalPlayer.Backpack
+		local character = game.Players.LocalPlayer.Character
+		
+		-- Проверяем наличие True Power в инвентаре
+		local truePowerTool = backpack:FindFirstChild("True Power") or character:FindFirstChild("True Power")
+		
+		if truePowerTool then
+			-- Если True Power в рюкзаке, экипируем его
+			if truePowerTool.Parent == backpack then
+				game.Players.LocalPlayer.Character.Humanoid:EquipTool(truePowerTool)
+                wait(0.3)
+			end
+			
+			-- Активируем True Power
+			truePowerTool:Activate()
+		end
+		
+		-- Затем используем все остальные предметы
+		for _, item in pairs(backpack:GetChildren()) do
+			if item:IsA("Tool") and item.Name ~= "True Power" then
+				game.Players.LocalPlayer.Character.Humanoid:EquipTool(item)
+				item:Activate()
+			end
+		end
 	end    
 })
 
@@ -336,7 +357,7 @@ Tab3:AddToggle({
                                 HumanoidRootPart.CFrame = item.Handle.CFrame
                                 item.Handle.Anchored = true
                                 task.wait(0.5)
-                                Press()
+                                game.ReplicatedStorage.Events.Item:FireServer(item.Handle)
                                 task.wait(1.3)
                                 break
                             end
@@ -392,7 +413,7 @@ local realtimeDropdown = Tab3:AddDropdown({
         game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = targetItem.Handle.CFrame
         targetItem.Handle.Anchored = true
         task.wait(0.25)
-        Press() -- Ваша функция нажатия F
+        game.ReplicatedStorage.Events.Item:FireServer(targetItem.Handle) -- Ваша функция нажатия F
         task.wait(0.5)
         game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = originalCFrame
 
