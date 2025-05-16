@@ -209,30 +209,32 @@ Tab2:AddButton({
 Tab2:AddButton({
 	Name = "Использовать все предметы",
 	Callback = function()
-		-- Сначала ищем True Power и используем его, если есть
 		local backpack = game.Players.LocalPlayer.Backpack
 		local character = game.Players.LocalPlayer.Character
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
 		
-		-- Проверяем наличие True Power в инвентаре
-		local truePowerTool = backpack:FindFirstChild("True Power") or character:FindFirstChild("True Power")
+		if not humanoid then return end
 		
-		if truePowerTool then
-			-- Если True Power в рюкзаке, экипируем его
-			if truePowerTool.Parent == backpack then
-				game.Players.LocalPlayer.Character.Humanoid:EquipTool(truePowerTool)
+		-- Сначала используем ВСЕ True Power (если есть)
+		for _, tool in pairs(backpack:GetChildren()) do
+			if tool.Name == "True Power" and tool:IsA("Tool") then
+				humanoid:EquipTool(tool)
+				tool:Activate()
+				task.wait(0.5) -- Даём время на активацию
 			end
-			
-			-- Активируем True Power
-			truePowerTool:Activate()
-			wait(3)
+		end
+		
+		-- Проверяем, есть ли True Power в руках (на случай, если не было в рюкзаке)
+		if character:FindFirstChild("True Power") then
+			character["True Power"]:Activate()
+			task.wait(0.5)
 		end
 		
 		-- Затем используем все остальные предметы
-		for _, item in pairs(backpack:GetChildren()) do
-			if item:IsA("Tool") and item.Name ~= "True Power" then
-				game.Players.LocalPlayer.Character.Humanoid:EquipTool(item)
-				item:Activate()
-				wait(0.1)
+		for _, tool in pairs(backpack:GetChildren()) do
+			if tool:IsA("Tool") and tool.Name ~= "True Power" then
+				humanoid:EquipTool(tool)
+				tool:Activate()
 			end
 		end
 	end    
