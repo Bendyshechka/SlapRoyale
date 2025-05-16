@@ -220,11 +220,11 @@ Tab2:AddButton({
 			-- Если True Power в рюкзаке, экипируем его
 			if truePowerTool.Parent == backpack then
 				game.Players.LocalPlayer.Character.Humanoid:EquipTool(truePowerTool)
-                wait(0.3)
 			end
 			
 			-- Активируем True Power
 			truePowerTool:Activate()
+			wait(0.3)
 		end
 		
 		-- Затем используем все остальные предметы
