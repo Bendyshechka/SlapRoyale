@@ -224,7 +224,7 @@ Tab2:AddButton({
 			
 			-- Активируем True Power
 			truePowerTool:Activate()
-			wait(0.3)
+			wait(3)
 		end
 		
 		-- Затем используем все остальные предметы
@@ -232,6 +232,7 @@ Tab2:AddButton({
 			if item:IsA("Tool") and item.Name ~= "True Power" then
 				game.Players.LocalPlayer.Character.Humanoid:EquipTool(item)
 				item:Activate()
+				wait(0.1)
 			end
 		end
 	end    
